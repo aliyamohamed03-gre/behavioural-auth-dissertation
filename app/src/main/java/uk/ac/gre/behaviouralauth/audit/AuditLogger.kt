@@ -11,13 +11,7 @@ import org.json.JSONObject
 private const val GENESIS_HASH = "GENESIS"
 private const val AUDIT_LOG_FILENAME = "audit_log.json"
 
-/**
- * Maintains a SHA-256 hash-chained audit log.
- *
- * The forensic value comes from linking every entry to the hash of the previous
- * entry. If someone edits or removes a past entry, verification fails from that
- * point onward.
- */
+
 class AuditLogger private constructor(
     private val logDirectoryProvider: () -> File
 ) {
@@ -25,12 +19,14 @@ class AuditLogger private constructor(
 
     internal constructor(logDirectory: File) : this({ logDirectory })
 
+    //Points to the JSON file where the audit trail is stored.
     private val logFile: File
         get() = File(logDirectoryProvider(), AUDIT_LOG_FILENAME)
 
     private var entries = mutableListOf<AuditLogEntry>()
     private var lastHash: String = GENESIS_HASH
 
+    //Loads any existing records so the log continues from the previous state.
     init {
         loadExistingLog()
     }
@@ -39,6 +35,8 @@ class AuditLogger private constructor(
     fun log(event: AuditEvent) {
         val eventData = eventToMap(event)
         val timestamp = eventTimestamp(event)
+
+        //Builds the entry first without its own hash, because the hash depends on the entry contents.
         val entryWithoutHash = AuditLogEntry(
             sequenceNumber = entries.size,
             timestamp = timestamp,
@@ -48,6 +46,8 @@ class AuditLogger private constructor(
             previousHash = lastHash,
             entryHash = ""
         )
+
+        //The final hash links this record to the previous one.
         val entryHash = computeEntryHash(entryWithoutHash)
         val finalEntry = entryWithoutHash.copy(entryHash = entryHash)
 
@@ -60,16 +60,14 @@ class AuditLogger private constructor(
 
     fun entryCount(): Int = entries.size
 
-    /**
-     * Recomputes every entry hash and checks every link in the chain.
-     *
-     * This is the forensic verification function used to detect tampering.
-     */
+
     fun verifyChain(): ChainVerificationResult {
         var expectedPreviousHash = GENESIS_HASH
 
+        //Recomputes each hash to check whether the log has been changed.
         entries.forEach { entry ->
             val recomputedHash = computeEntryHash(entry.copy(entryHash = ""))
+
             if (entry.previousHash != expectedPreviousHash) {
                 return ChainVerificationResult(
                     isValid = false,
@@ -98,6 +96,7 @@ class AuditLogger private constructor(
     }
 
     private fun loadExistingLog() {
+        //Starts a fresh chain if there is no previous audit log.
         if (!logFile.exists()) {
             entries = mutableListOf()
             lastHash = GENESIS_HASH
@@ -105,6 +104,8 @@ class AuditLogger private constructor(
         }
 
         val rawJson = logFile.readText(Charsets.UTF_8)
+
+        //Handles an empty file safely instead of trying to parse it.
         if (rawJson.isBlank()) {
             entries = mutableListOf()
             lastHash = GENESIS_HASH
@@ -113,6 +114,8 @@ class AuditLogger private constructor(
 
         val parsedEntries = mutableListOf<AuditLogEntry>()
         val array = JSONArray(rawJson)
+
+        //Converts each saved JSON object back into an audit log entry.
         for (index in 0 until array.length()) {
             val item = array.getJSONObject(index)
             parsedEntries.add(jsonToEntry(item))
@@ -124,24 +127,31 @@ class AuditLogger private constructor(
 
     private fun persistLog() {
         val parent = logFile.parentFile
+
+        //Makes sure the folder exists before writing the audit file.
         if (parent != null && !parent.exists()) {
             parent.mkdirs()
         }
 
         val array = JSONArray()
+
+        //Stores entries in a readable JSON format for later review.
         entries.forEach { entry ->
             array.put(entryToJsonObject(entry))
         }
+
         logFile.writeText(array.toString(2), Charsets.UTF_8)
     }
 
     private fun sha256(input: String): String {
+        //SHA-256 is used to make changes to old records detectable.
         return MessageDigest.getInstance("SHA-256")
             .digest(input.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
     }
 
     private fun eventToMap(event: AuditEvent): Map<String, String> {
+        //Converts each event into simple key-value data for JSON storage.
         return when (event) {
             is AuditEvent.ConsentGranted -> mapOf(
                 "timestamp" to event.timestamp.toString()
@@ -203,6 +213,7 @@ class AuditLogger private constructor(
     }
 
     private fun eventTimestamp(event: AuditEvent): Long {
+        //Pulls out the timestamp without needing the caller to know the event type.
         return when (event) {
             is AuditEvent.ConsentGranted -> event.timestamp
             is AuditEvent.EnrollmentStarted -> event.timestamp
@@ -219,6 +230,7 @@ class AuditLogger private constructor(
     }
 
     private fun formatUtc(timestamp: Long): String {
+        //Keeps a human-readable UTC version of the timestamp alongside the raw value.
         return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(timestamp))
     }
 
@@ -227,6 +239,7 @@ class AuditLogger private constructor(
     }
 
     private fun entryJsonWithoutHash(entry: AuditLogEntry): String {
+        //Uses a stable field order so the same entry always produces the same hash.
         val fields = listOf(
             "eventData" to stableStringMapJson(entry.eventData),
             "eventType" to JSONObject.quote(entry.eventType),
@@ -242,12 +255,14 @@ class AuditLogger private constructor(
     }
 
     private fun stableStringMapJson(values: Map<String, String>): String {
+        //Sorts map keys so hashing is not affected by random key order.
         return values.toSortedMap().entries.joinToString(prefix = "{", postfix = "}") { (key, value) ->
             "${JSONObject.quote(key)}:${JSONObject.quote(value)}"
         }
     }
 
     private fun entryToJsonObject(entry: AuditLogEntry): JSONObject {
+        //Converts an audit entry into the structure saved in the log file.
         return JSONObject().apply {
             put("sequenceNumber", entry.sequenceNumber)
             put("timestamp", entry.timestamp)
@@ -265,6 +280,8 @@ class AuditLogger private constructor(
 
     private fun jsonToEntry(json: JSONObject): AuditLogEntry {
         val eventDataJson = json.optJSONObject("eventData") ?: JSONObject()
+
+        //Reads the stored event data back into a normal Kotlin map.
         val eventData = buildMap {
             val keys = eventDataJson.keys()
             while (keys.hasNext()) {
@@ -285,6 +302,7 @@ class AuditLogger private constructor(
     }
 
     internal fun replaceEntryForTesting(index: Int, entry: AuditLogEntry) {
+        //Used in tests to simulate tampering with a log entry.
         entries[index] = entry
     }
 }
