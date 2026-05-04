@@ -23,6 +23,7 @@ import uk.ac.gre.behaviouralauth.ui.components.AppButton
 import uk.ac.gre.behaviouralauth.ui.components.ScreenFrame
 import uk.ac.gre.behaviouralauth.ui.components.SectionCard
 
+//Shows the consent screen and requires user agreement before continuing.
 @Composable
 fun ConsentScreen(
     onContinue: () -> Unit
@@ -33,6 +34,7 @@ fun ConsentScreen(
         title = "Before We Begin",
         contentDescription = "Consent screen"
     ) {
+        //Explains what behavioural data is collected, why it is used, and how it is stored.
         SectionCard(contentDescription = "Consent details") {
             Text(
                 text = "This prototype collects behavioural data to study how people type and swipe during smartphone use.",
@@ -61,6 +63,7 @@ fun ConsentScreen(
             )
         }
 
+        //Lets the user explicitly confirm consent before enabling the continue button.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,6 +85,7 @@ fun ConsentScreen(
             )
         }
 
+        //Only allows navigation once consent has been confirmed.
         AppButton(
             text = "Continue",
             enabled = consentChecked,

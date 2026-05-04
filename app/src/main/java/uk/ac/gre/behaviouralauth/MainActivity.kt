@@ -9,7 +9,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import uk.ac.gre.behaviouralauth.ui.theme.BehaviouralAuthTheme
 
+//Main Android activity that launches the Compose-based behavioural authentication app.
 class MainActivity : ComponentActivity() {
+
+    //Sets up edge-to-edge display and loads the app UI when the activity starts.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -22,4 +25,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

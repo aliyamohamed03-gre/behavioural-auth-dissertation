@@ -5,7 +5,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+// ests feature extraction and window-closing behaviour for captured keystroke and swipe data.
 class CaptureTest {
+
+    //Checks that inter-key intervals are averaged correctly.
     @Test
     fun testInterKeyIntervalCalculation() {
         val window = FeatureWindow()
@@ -16,6 +19,7 @@ class CaptureTest {
         assertEquals(137.5, features.meanInterKeyInterval, 0.01)
     }
 
+    //Checks that inter-key interval variation is calculated correctly.
     @Test
     fun testStdInterKeyIntervalCalculation() {
         val window = FeatureWindow()
@@ -26,6 +30,7 @@ class CaptureTest {
         assertEquals(21.65, features.stdInterKeyInterval, 0.05)
     }
 
+    //Checks that the median inter-key interval is calculated correctly.
     @Test
     fun testMedianInterKeyInterval() {
         val window = FeatureWindow()
@@ -36,6 +41,7 @@ class CaptureTest {
         assertEquals(150.0, features.medianInterKeyInterval, 0.0)
     }
 
+    //Checks that deletion behaviour is converted into the correct delete ratio.
     @Test
     fun testDeleteRatio() {
         val window = FeatureWindow()
@@ -57,6 +63,7 @@ class CaptureTest {
         assertEquals(0.3, features.deleteRatio, 0.0001)
     }
 
+    //Checks that typing speed is calculated from keystrokes over time.
     @Test
     fun testTypingSpeed() {
         val window = FeatureWindow()
@@ -72,6 +79,7 @@ class CaptureTest {
         assertEquals(2.0, features.typingSpeed, 0.0001)
     }
 
+    //Checks that a feature window closes after 20 keystrokes.
     @Test
     fun testWindowClosesAt20Keystrokes() {
         val closedWindows = mutableListOf<FeatureVector>()
@@ -86,6 +94,7 @@ class CaptureTest {
         assertEquals(1, closedWindows.size)
     }
 
+    //Checks that a feature window closes after 5 swipe gestures.
     @Test
     fun testWindowClosesAt5Swipes() {
         val closedWindows = mutableListOf<FeatureVector>()
@@ -103,6 +112,7 @@ class CaptureTest {
         assertEquals(1, closedWindows.size)
     }
 
+    //Checks that a window closes after 30 seconds when enough events exist.
     @Test
     fun testWindowClosesOn30SecondsWithEnoughEvents() {
         val closedWindows = mutableListOf<FeatureVector>()
@@ -114,6 +124,7 @@ class CaptureTest {
         assertEquals(1, closedWindows.size)
     }
 
+    //Checks that a window does not close on time alone when too few events exist.
     @Test
     fun testWindowDoesNotCloseOn30SecondsWithFewerThan5Events() {
         val closedWindows = mutableListOf<FeatureVector>()
@@ -125,6 +136,7 @@ class CaptureTest {
         assertEquals(0, closedWindows.size)
     }
 
+    //Checks that inactivity closes a window when enough events have already been recorded.
     @Test
     fun testWindowClosesOnInactivity() {
         val closedWindows = mutableListOf<FeatureVector>()
@@ -136,6 +148,7 @@ class CaptureTest {
         assertEquals(1, closedWindows.size)
     }
 
+    //Checks that confidence increases or resets based on the number of events in the active window.
     @Test
     fun testConfidenceWeighting() {
         val controller = FeatureWindowController(onWindowClosed = {})
@@ -162,6 +175,7 @@ class CaptureTest {
         assertEquals(0.25, controller.snapshot().confidence, 0.0001)
     }
 
+    //Checks that an empty window safely returns zero values for all features.
     @Test
     fun testEmptyWindowFeatures() {
         val window = FeatureWindow()
@@ -184,18 +198,21 @@ class CaptureTest {
         assertEquals(0.0, features.stdSwipeDistance, 0.0)
     }
 
+    //Adds test keystrokes directly to a feature window.
     private fun addKeystrokes(window: FeatureWindow, timestamps: List<Long>) {
         timestamps.forEach { timestamp ->
             window.addKeystroke(keystroke(timestampMs = timestamp, wasDeletion = false))
         }
     }
 
+    //Adds test keystrokes through the window controller.
     private fun addKeystrokes(controller: FeatureWindowController, timestamps: List<Long>) {
         timestamps.forEach { timestamp ->
             controller.submitKeystroke(keystroke(timestampMs = timestamp, wasDeletion = false))
         }
     }
 
+    //Creates a test keystroke event with either insertion or deletion behaviour.
     private fun keystroke(timestampMs: Long, wasDeletion: Boolean): KeystrokeEvent {
         return if (wasDeletion) {
             KeystrokeEvent(
@@ -214,6 +231,7 @@ class CaptureTest {
         }
     }
 
+    //Creates a simple horizontal swipe event for testing gesture capture.
     private fun swipe(startTimestampMs: Long, endTimestampMs: Long): SwipeEvent {
         return SwipeEvent(
             startTimestampMs = startTimestampMs,

@@ -40,6 +40,7 @@ import uk.ac.gre.behaviouralauth.ui.components.AppButton
 import uk.ac.gre.behaviouralauth.ui.components.ScreenFrame
 import uk.ac.gre.behaviouralauth.ui.components.SectionCard
 
+//Displays settings for sensitivity, data export, profile reset, and audit verification.
 @Composable
 fun SettingsScreen(
     uiState: AppUiState,
@@ -50,9 +51,12 @@ fun SettingsScreen(
     onVerifyAuditChain: () -> ChainVerificationResult
 ) {
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
+
+    //Stores the latest audit chain verification result so it can be shown in a dialog.
     var chainVerificationResult by remember {
         mutableStateOf<ChainVerificationResult?>(null)
     }
+
     val context = LocalContext.current
     val activity = context.findComponentActivity()
     val sharedViewModel: AppViewModel? = if (activity != null) {
@@ -72,6 +76,7 @@ fun SettingsScreen(
         ) {
             val sensitivity = uiState.sensitivity
 
+            //Lets the user adjust how strictly behavioural anomalies are handled.
             Slider(
                 value = sensitivity.storageValue.toFloat(),
                 onValueChange = onSensitivityChanged,
@@ -115,6 +120,7 @@ fun SettingsScreen(
             )
         }
 
+        //Exports captured behavioural feature data as a CSV file if records are available.
         AppButton(
             text = "Export Behavioural Data ($featureRecordCount records)",
             onClick = {
@@ -141,6 +147,7 @@ fun SettingsScreen(
             contentDescription = "Reset profile. This will delete all enrollment data"
         )
 
+        //Shows local data, profile, and audit-log status.
         SectionCard(title = "Your Data", contentDescription = "User data summary") {
             Text(
                 text = "Session count: ${uiState.sessionsCompleted}",
@@ -158,6 +165,8 @@ fun SettingsScreen(
                 text = "Audit log: $auditLogEntryCount entries",
                 style = MaterialTheme.typography.bodyLarge
             )
+
+            //Runs integrity verification on the audit log chain.
             Button(
                 onClick = {
                     chainVerificationResult = onVerifyAuditChain()
@@ -186,6 +195,7 @@ fun SettingsScreen(
         }
     }
 
+    //Confirms destructive profile reset before deleting stored behavioural data.
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -211,6 +221,7 @@ fun SettingsScreen(
         )
     }
 
+    //Shows whether the audit chain passed verification or appears tampered with.
     chainVerificationResult?.let { result ->
         AlertDialog(
             onDismissRequest = { chainVerificationResult = null },
@@ -235,6 +246,7 @@ fun SettingsScreen(
     }
 }
 
+//Finds the parent ComponentActivity from the current Compose context.
 private tailrec fun Context.findComponentActivity(): ComponentActivity? {
     return when (this) {
         is ComponentActivity -> this

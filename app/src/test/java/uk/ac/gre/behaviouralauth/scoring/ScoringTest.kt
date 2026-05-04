@@ -6,7 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import uk.ac.gre.behaviouralauth.capture.FeatureVector
 
+//Tests baseline scoring, trust-score calculation, anomaly ranking, and accessibility tolerance.
 class ScoringTest {
+
+    //Checks that behaviour matching the baseline receives a full trust score.
     @Test
     fun testPerfectMatch() {
         val result = ZScoreEngine(profile(mean = 10.0, std = 2.0)).score(vector(value = 10.0))
@@ -15,6 +18,7 @@ class ScoringTest {
         assertFalse(result.isSuspicious)
     }
 
+    //Checks that a small deviation lowers the trust score moderately.
     @Test
     fun testModerateDev() {
         val result = ZScoreEngine(profile(mean = 10.0, std = 2.0)).score(vector(value = 12.0))
@@ -22,6 +26,7 @@ class ScoringTest {
         assertEquals(80, result.trustScore)
     }
 
+    //Checks that a larger deviation produces a low trust score.
     @Test
     fun testHighDev() {
         val result = ZScoreEngine(profile(mean = 10.0, std = 2.0)).score(vector(value = 18.0))
@@ -29,6 +34,7 @@ class ScoringTest {
         assertEquals(20, result.trustScore)
     }
 
+    //Checks that an extreme deviation is capped at zero and marked suspicious.
     @Test
     fun testExtremeDev() {
         val result = ZScoreEngine(profile(mean = 10.0, std = 2.0)).score(vector(value = 24.0))
@@ -37,6 +43,7 @@ class ScoringTest {
         assertTrue(result.isSuspicious)
     }
 
+    //Checks that accessibility mode gives a higher score by widening tolerance.
     @Test
     fun testAccessibilityWiderTolerance() {
         val standardProfile = buildProfile(accessibilityMode = false)
@@ -49,6 +56,7 @@ class ScoringTest {
         assertTrue(accessibilityScore > standardScore)
     }
 
+    //Checks that the largest anomaly appears first in the anomaly list.
     @Test
     fun testTopAnomaliesOrder() {
         val matchingValues = Tier1FeatureKeys.ALL.associateWith { 10.0 }.toMutableMap()
@@ -61,6 +69,7 @@ class ScoringTest {
         assertEquals("typingSpeed", result.topAnomalies.first().featureName)
     }
 
+    //Checks that features with zero observed and baseline values are skipped.
     @Test
     fun testSkipsZeroFeatures() {
         val typingKeys = setOf(
@@ -92,6 +101,7 @@ class ScoringTest {
         assertFalse(result.topAnomalies.any { it.featureName.contains("Swipe") })
     }
 
+    //Builds a test baseline profile with or without accessibility mode enabled.
     private fun buildProfile(accessibilityMode: Boolean): BaselineProfile {
         val builder = BaselineBuilder()
         builder.setAccessibilityMode(accessibilityMode)
@@ -101,6 +111,7 @@ class ScoringTest {
         return builder.build()
     }
 
+    //Creates a baseline profile where every feature has the same mean and standard deviation.
     private fun profile(mean: Double, std: Double): BaselineProfile {
         return BaselineProfile(
             featureMeans = Tier1FeatureKeys.ALL.associateWith { mean },
@@ -111,10 +122,12 @@ class ScoringTest {
         )
     }
 
+    //Creates a feature vector where every Tier 1 feature has the same value.
     private fun vector(value: Double): FeatureVector {
         return vector(values = Tier1FeatureKeys.ALL.associateWith { value })
     }
 
+    //Creates a feature vector from a map of test feature values.
     private fun vector(values: Map<String, Double>): FeatureVector {
         return FeatureVector(
             windowStartMs = 0L,

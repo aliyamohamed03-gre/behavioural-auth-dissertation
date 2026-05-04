@@ -8,10 +8,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+//Tests that audit log entries are chained, persisted, and tamper-detectable.
 class AuditLogTest {
+
+    // Creates temporary folders for isolated audit log test files.
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
+    //Checks that the first audit entry starts from the GENESIS hash.
     @Test
     fun testGenesisEntry() {
         val logger = newLogger()
@@ -23,6 +27,7 @@ class AuditLogTest {
         assertTrue(firstEntry.entryHash.isNotBlank())
     }
 
+    //Checks that each audit entry points to the hash of the previous entry.
     @Test
     fun testChainLinks() {
         val logger = newLogger()
@@ -36,6 +41,7 @@ class AuditLogTest {
         assertEquals(entries[1].entryHash, entries[2].previousHash)
     }
 
+    //Verifies that an untampered audit chain passes integrity checking.
     @Test
     fun testVerifyValidChain() {
         val logger = newLogger()
@@ -64,6 +70,7 @@ class AuditLogTest {
         assertEquals(5, result.entriesChecked)
     }
 
+    //Confirms that changing stored audit data breaks chain verification.
     @Test
     fun testDetectTampering() {
         val logger = newLogger()
@@ -82,6 +89,7 @@ class AuditLogTest {
         assertEquals(1, result.brokenAtSequence)
     }
 
+    //Ensures the same audit event produces the same hash in different logs.
     @Test
     fun testEntryHashDeterministic() {
         val firstLogger = AuditLogger(temporaryFolder.newFolder("first"))
@@ -97,6 +105,7 @@ class AuditLogTest {
         )
     }
 
+    //Checks that saved audit logs can be reloaded and still verified.
     @Test
     fun testExistingLogReloads() {
         val directory = temporaryFolder.newFolder("reload")
@@ -112,6 +121,7 @@ class AuditLogTest {
         assertNotNull(secondLogger.getEntries().last().entryHash)
     }
 
+    //Creates a new audit logger using a fresh temporary folder.
     private fun newLogger(): AuditLogger {
         return AuditLogger(temporaryFolder.newFolder())
     }

@@ -39,6 +39,7 @@ private const val EXPORT_USER_ID = "user_001"
 private const val SESSION_TYPE_ENROLLMENT = "ENROLLMENT"
 private const val SESSION_TYPE_TEST = "TEST"
 
+//Controls app state, behavioural capture, baseline creation, scoring, audit logging, and export.
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SecurePreferencesRepository(application.applicationContext)
     private val baselineRepository = BaselineRepository(application.applicationContext)
@@ -62,6 +63,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         startWindowTicker()
     }
 
+    //Records user consent and updates the app state.
     fun grantConsent() {
         repository.setConsent(true)
         auditLogger.log(AuditEvent.ConsentGranted(System.currentTimeMillis()))
@@ -71,6 +73,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Moves to the next enrollment passage in a repeating set of three.
     fun showNextEnrollmentPassage() {
         uiState = uiState.copy(
             enrollment = uiState.enrollment.copy(
@@ -79,6 +82,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Starts a new enrollment session and prepares baseline collection.
     fun startEnrollmentSession() {
         baselineBuilder.reset()
         baselineBuilder.setAccessibilityMode(false)
@@ -99,6 +103,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Toggles accessibility mode to widen baseline tolerance during enrollment.
     fun toggleAccessibilityMode() {
         val newMode = !uiState.enrollment.isAccessibilityMode
         baselineBuilder.setAccessibilityMode(newMode)
@@ -107,6 +112,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Updates enrollment text and converts text changes into keystroke events.
     fun updateEnrollmentText(newText: String) {
         val oldText = uiState.enrollment.typedText
         keystrokeCaptureSource.handleComposeTextChange(oldText, newText) { event ->
@@ -121,6 +127,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Records an enrollment swipe gesture and updates the gesture counter.
     fun registerEnrollmentGesture(event: SwipeEvent) {
         enrollmentController.submitSwipe(event)
         uiState = uiState.copy(
@@ -130,6 +137,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Finishes enrollment and creates a profile once enough sessions and vectors exist.
     fun finishEnrollmentSession() {
         val accessibilityMode = uiState.enrollment.isAccessibilityMode
         val previousState = uiState.authState
@@ -175,6 +183,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Starts a test session if a saved baseline profile is available.
     fun startTestSession() {
         currentProfile = baselineRepository.loadProfile()
         if (currentProfile == null) return
@@ -204,12 +213,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         auditLogger.log(AuditEvent.TestSessionStarted(System.currentTimeMillis()))
     }
 
+    //Stores the selected test-session label.
     fun selectSessionLabel(label: SessionLabel) {
         uiState = uiState.copy(
             test = uiState.test.copy(selectedLabel = label)
         )
     }
 
+    //Updates test text and converts text changes into keystroke events.
     fun updateTestText(newText: String) {
         val oldText = uiState.test.typedText
         keystrokeCaptureSource.handleComposeTextChange(oldText, newText) { event ->
@@ -224,6 +235,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Records a test-session swipe gesture and updates the gesture counter.
     fun registerTestGesture(event: SwipeEvent) {
         testController.submitSwipe(event)
         uiState = uiState.copy(
@@ -231,6 +243,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Ends the active test session and restores the appropriate authentication state.
     fun endTestSession() {
         val nextState = if (uiState.hasProfile) AuthState.TRUSTED else AuthState.NOT_ENROLLED
         val previousState = uiState.authState
@@ -255,12 +268,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         auditLogger.log(AuditEvent.TestSessionEnded(System.currentTimeMillis()))
     }
 
+    //Accepts only numeric PIN input and limits it to six digits.
     fun updatePinInput(value: String) {
         uiState = uiState.copy(
             stepUp = uiState.stepUp.copy(pinInput = value.filter(Char::isDigit).take(6))
         )
     }
 
+    //Verifies the step-up PIN and handles success, retry, invalid input, or lockout.
     fun verifyStepUpPin(): PinVerificationResult {
         val pin = uiState.stepUp.pinInput
         if (pin.length !in 4..6) {
@@ -350,6 +365,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    //Exits a locked test session and returns the app to a locked home state.
     fun exitLockedSessionToHome() {
         val previousState = uiState.authState
         repository.setAuthState(AuthState.LOCKED)
@@ -372,6 +388,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         activeMode = ActiveMode.IDLE
     }
 
+    //Updates authentication sensitivity and records the change in the audit log.
     fun updateSensitivity(sliderValue: Float) {
         val sensitivity = SensitivitySetting.fromSlider(sliderValue)
         repository.setSensitivity(sensitivity)
@@ -389,6 +406,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Deletes the profile, captured records, and resets the app to a non-enrolled state.
     fun resetProfile() {
         val previousState = uiState.authState
         repository.resetProfile()
@@ -424,10 +442,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         lastTestVector = null
     }
 
+    //Verifies whether the audit log chain is intact.
     fun verifyAuditChain(): ChainVerificationResult = auditLogger.verifyChain()
 
+    //Returns the number of audit log entries currently stored.
     fun auditLogEntryCount(): Int = auditLogger.entryCount()
 
+    //Exports captured feature records to a CSV file.
     fun exportFeaturesCsv(): File? {
         val records = featureRecordStore.snapshot()
         if (records.isEmpty()) return null
@@ -442,8 +463,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         return file
     }
 
+    //Returns the number of behavioural feature records available for export.
     fun featureRecordCount(): Int = featureRecordStore.count()
 
+    //Loads saved consent, profile, sensitivity, session count, and authentication state.
     private fun loadInitialState() {
         val sessionsCompleted = repository.getSessionsCompleted()
         currentProfile = baselineRepository.loadProfile()
@@ -470,6 +493,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Periodically checks whether the active feature window should close.
     private fun startWindowTicker() {
         viewModelScope.launch {
             while (true) {
@@ -484,6 +508,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    //Creates the controller that turns enrollment events into baseline feature windows.
     private fun createEnrollmentController(): FeatureWindowController {
         return FeatureWindowController { featureVector ->
             lastEnrollmentVector = featureVector
@@ -497,6 +522,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    //Creates the controller that scores closed test feature windows.
     private fun createTestController(): FeatureWindowController {
         return FeatureWindowController { featureVector ->
             lastTestVector = featureVector
@@ -509,6 +535,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    //Stores a closed feature window as an exportable feature record.
     private fun addFeatureRecord(
         featureVector: FeatureVector,
         fallbackSessionType: String
@@ -529,6 +556,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Scores a closed test window against the saved baseline profile.
     private fun scoreClosedTestWindow(featureVector: FeatureVector) {
         val profile = currentProfile ?: return
         val sensitivity = uiState.sensitivity
@@ -573,7 +601,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val confidenceText = String.format(Locale.US, "%.2f", result.confidence)
         val statusText = if (isSuspicious) "SUSPICIOUS" else "OK"
         val logEntry = "Window #$windowNumber: score=${result.trustScore} " +
-            "conf=$confidenceText $statusText"
+                "conf=$confidenceText $statusText"
 
         uiState = uiState.copy(
             authState = persistedAuthState,
@@ -590,6 +618,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    //Converts a trust score into a trusted, uncertain, or locked authentication state.
     private fun authStateFromTrustScore(
         trustScore: Int,
         sensitivity: SensitivitySetting
@@ -602,6 +631,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    //Tracks whether the app is currently idle, enrolling, or testing.
     private enum class ActiveMode {
         IDLE,
         ENROLLING,
@@ -609,6 +639,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
+//Represents the possible outcomes of PIN verification.
 enum class PinVerificationResult {
     Success,
     FailedRetry,

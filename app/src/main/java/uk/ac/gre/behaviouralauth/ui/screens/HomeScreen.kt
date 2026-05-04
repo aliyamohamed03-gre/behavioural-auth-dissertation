@@ -13,6 +13,7 @@ import uk.ac.gre.behaviouralauth.ui.components.AppButton
 import uk.ac.gre.behaviouralauth.ui.components.ScreenFrame
 import uk.ac.gre.behaviouralauth.ui.components.StatusBanner
 
+//Displays the home screen with authentication status and main navigation actions.
 @Composable
 fun HomeScreen(
     uiState: AppUiState,
@@ -37,6 +38,7 @@ fun HomeScreen(
             onClick = onStartEnrollment
         )
 
+        //Only enables test sessions after a baseline profile has been created.
         AppButton(
             text = "Start Test Session",
             onClick = onStartTestSession,
@@ -51,6 +53,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        //Shows a brief summary of enrollment progress and profile availability.
         Text(
             text = "Sessions completed: ${uiState.sessionsCompleted} | Profile: ${if (uiState.hasProfile) "Available" else "None"}",
             style = MaterialTheme.typography.bodyMedium

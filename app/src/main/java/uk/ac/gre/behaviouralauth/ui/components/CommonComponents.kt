@@ -48,6 +48,7 @@ import uk.ac.gre.behaviouralauth.ui.theme.AppSurface
 import uk.ac.gre.behaviouralauth.ui.theme.SwipeAreaBackground
 import uk.ac.gre.behaviouralauth.ui.theme.SwipeAreaBorder
 
+//Provides a reusable screen layout with title, padding, scrolling, and accessibility description.
 @Composable
 fun ScreenFrame(
     title: String,
@@ -75,6 +76,7 @@ fun ScreenFrame(
     }
 }
 
+//Creates a full-width accessible button with optional disabled state description.
 @Composable
 fun AppButton(
     text: String,
@@ -105,6 +107,7 @@ fun AppButton(
     }
 }
 
+//Displays the current authentication status using colour, text, and a live accessibility update.
 @Composable
 fun StatusBanner(authState: AuthState) {
     Card(
@@ -140,6 +143,7 @@ fun StatusBanner(authState: AuthState) {
     }
 }
 
+//Creates a reusable card section with an optional heading and accessible label.
 @Composable
 fun SectionCard(
     title: String? = null,
@@ -169,6 +173,7 @@ fun SectionCard(
     }
 }
 
+//Provides an accessible swipe area that records drag gestures for behavioural data capture.
 @Composable
 fun SwipeCaptureArea(
     onGestureCaptured: () -> Unit,
@@ -211,6 +216,7 @@ fun SwipeCaptureArea(
     }
 }
 
+//Shows a centred loading indicator while the app is preparing content.
 @Composable
 fun LoadingScreen() {
     Box(

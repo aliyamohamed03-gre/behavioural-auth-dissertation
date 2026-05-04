@@ -33,6 +33,7 @@ import uk.ac.gre.behaviouralauth.ui.components.ScreenFrame
 import uk.ac.gre.behaviouralauth.ui.components.SectionCard
 import uk.ac.gre.behaviouralauth.ui.components.SwipeCaptureArea
 
+//Displays the live authentication testing screen for typing and swipe behaviour.
 @Composable
 fun TestScreen(
     uiState: AppUiState,
@@ -64,6 +65,7 @@ fun TestScreen(
             fontWeight = FontWeight.SemiBold
         )
 
+        //Lets the user label the session type for testing and analysis.
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -85,6 +87,7 @@ fun TestScreen(
             }
         }
 
+        //Captures typing behaviour during the authentication test session.
         OutlinedTextField(
             value = testState.typedText,
             onValueChange = onTextChanged,
@@ -99,6 +102,7 @@ fun TestScreen(
             textStyle = MaterialTheme.typography.bodyLarge
         )
 
+        //Captures swipe behaviour during the authentication test session.
         SwipeCaptureArea(
             onGestureCaptured = {},
             modifier = Modifier.captureSwipes { event ->
@@ -107,6 +111,7 @@ fun TestScreen(
             contentDescription = "Swipe area. Perform swipe gestures here to record your gesture pattern"
         )
 
+        //Shows the latest trust score, anomaly level, state, and confidence.
         SectionCard(title = "Live Scoring", contentDescription = "Live scoring panel") {
             Text(
                 text = "Trust Score: $trustScoreText/100",
@@ -137,6 +142,7 @@ fun TestScreen(
             )
         }
 
+        //Displays the strongest anomaly factors when the session becomes uncertain or locked.
         if (showAnomalyPanel && testState.anomalyFactors.isNotEmpty()) {
             SectionCard(
                 title = "Anomaly Explanation",
@@ -160,6 +166,7 @@ fun TestScreen(
             }
         }
 
+        //Lists recent scoring windows so changes over time can be reviewed.
         SectionCard(
             title = "Recent Windows",
             contentDescription = "Recent window scoring log"

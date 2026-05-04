@@ -18,6 +18,7 @@ import uk.ac.gre.behaviouralauth.model.AppUiState
 import uk.ac.gre.behaviouralauth.ui.components.AppButton
 import uk.ac.gre.behaviouralauth.ui.components.ScreenFrame
 
+//Shows a PIN verification screen when behavioural authentication becomes suspicious.
 @Composable
 fun StepUpScreen(
     uiState: AppUiState,
@@ -36,6 +37,7 @@ fun StepUpScreen(
             style = MaterialTheme.typography.bodyLarge
         )
 
+        //Captures the recovery PIN while hiding the typed value.
         OutlinedTextField(
             value = uiState.stepUp.pinInput,
             onValueChange = onPinChanged,
@@ -57,6 +59,7 @@ fun StepUpScreen(
             contentDescription = "Submit PIN for verification"
         )
 
+        //Announces remaining attempts politely for screen reader users.
         Text(
             text = "Attempts remaining: ${uiState.stepUp.attemptsRemaining}",
             modifier = Modifier.semantics {

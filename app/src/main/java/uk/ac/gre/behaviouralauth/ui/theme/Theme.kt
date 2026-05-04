@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
+//Defines the light colour scheme used across the behavioural authentication app.
 private val BehaviouralAuthColorScheme = lightColorScheme(
     primary = AppPrimary,
     onPrimary = AppOnPrimary,
@@ -11,6 +12,7 @@ private val BehaviouralAuthColorScheme = lightColorScheme(
     surface = AppSurface
 )
 
+//Applies the app colour scheme and typography to all nested Compose UI content.
 @Composable
 fun BehaviouralAuthTheme(
     content: @Composable () -> Unit
@@ -21,4 +23,3 @@ fun BehaviouralAuthTheme(
         content = content
     )
 }
-

@@ -20,23 +20,27 @@ import uk.ac.gre.behaviouralauth.ui.screens.SettingsScreen
 import uk.ac.gre.behaviouralauth.ui.screens.StepUpScreen
 import uk.ac.gre.behaviouralauth.ui.screens.TestScreen
 
+//Main app entry point that connects navigation, UI screens, and the shared ViewModel.
 @Composable
 fun BehaviouralAuthApp(viewModel: AppViewModel = viewModel()) {
     val uiState = viewModel.uiState
     val navController = rememberNavController()
     val context = LocalContext.current
 
+    //Shows a loading screen until the ViewModel has finished preparing app state.
     if (!uiState.isReady) {
         LoadingScreen()
         return
     }
 
+    //Sends new users to consent first and returning users directly to the home screen.
     val startDestination = if (uiState.hasConsented) {
         AppDestination.Home.route
     } else {
         AppDestination.Consent.route
     }
 
+    //Defines the navigation graph for all app screens.
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -79,6 +83,7 @@ fun BehaviouralAuthApp(viewModel: AppViewModel = viewModel()) {
         }
 
         composable(AppDestination.Test.route) {
+            //Redirects to step-up verification when the behavioural state becomes locked.
             LaunchedEffect(uiState.authState) {
                 if (uiState.authState == AuthState.LOCKED) {
                     navController.navigate(AppDestination.StepUp.route) {
@@ -104,6 +109,7 @@ fun BehaviouralAuthApp(viewModel: AppViewModel = viewModel()) {
                 uiState = uiState,
                 onPinChanged = viewModel::updatePinInput,
                 onVerify = {
+                    //Handles each PIN verification outcome with feedback and navigation.
                     when (viewModel.verifyStepUpPin()) {
                         PinVerificationResult.Success -> {
                             Toast.makeText(context, "PIN accepted.", Toast.LENGTH_SHORT).show()

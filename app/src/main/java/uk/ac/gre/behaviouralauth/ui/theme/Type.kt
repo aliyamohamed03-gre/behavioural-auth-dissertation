@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+//Defines the app typography scale using readable sans-serif text styles.
 val AppTypography = Typography(
     headlineSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
@@ -38,4 +39,3 @@ val AppTypography = Typography(
         lineHeight = 22.sp
     )
 )
-

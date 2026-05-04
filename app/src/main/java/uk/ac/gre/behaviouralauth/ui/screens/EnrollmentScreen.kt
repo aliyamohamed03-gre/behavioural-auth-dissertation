@@ -44,6 +44,7 @@ import uk.ac.gre.behaviouralauth.ui.components.AppButton
 import uk.ac.gre.behaviouralauth.ui.components.ScreenFrame
 import uk.ac.gre.behaviouralauth.ui.components.SwipeCaptureArea
 
+//Displays the enrollment screen used to collect typing and swipe behaviour.
 @Composable
 fun EnrollmentScreen(
     uiState: AppUiState,
@@ -59,6 +60,7 @@ fun EnrollmentScreen(
         null
     }
 
+    //Starts a new enrollment session when the shared ViewModel is available.
     LaunchedEffect(sharedViewModel) {
         sharedViewModel?.startEnrollmentSession()
     }
@@ -70,13 +72,12 @@ fun EnrollmentScreen(
         title = "Enrollment Session",
         contentDescription = "Enrollment session screen"
     ) {
-
-
         Text(
             text = "Type the passage below naturally to build your behavioural profile.",
             style = MaterialTheme.typography.bodyLarge
         )
 
+        //Allows users to enable wider tolerance during baseline creation.
         AccessibilityModeCard(
             enabled = enrollmentState.isAccessibilityMode,
             onToggle = {
@@ -84,6 +85,7 @@ fun EnrollmentScreen(
             }
         )
 
+        //Shows the current passage that the user needs to type.
         Text(
             text = EnrollmentPassages[enrollmentState.currentPassageIndex],
             modifier = Modifier
@@ -100,6 +102,7 @@ fun EnrollmentScreen(
             onClick = onNextPassage
         )
 
+        //Captures typed text so keystroke timing and rhythm can be analysed.
         OutlinedTextField(
             value = enrollmentState.typedText,
             onValueChange = onTextChanged,
@@ -114,6 +117,7 @@ fun EnrollmentScreen(
             textStyle = MaterialTheme.typography.bodyLarge
         )
 
+        //Captures swipe gestures for behavioural profile creation.
         SwipeCaptureArea(
             onGestureCaptured = {},
             modifier = Modifier.captureSwipes { event ->
@@ -122,6 +126,7 @@ fun EnrollmentScreen(
             contentDescription = "Swipe area. Perform swipe gestures here to record your gesture pattern"
         )
 
+        //Displays the number of captured typing and gesture events.
         Text(
             text = "Keystrokes: ${enrollmentState.keystrokeCount} | Gestures: ${enrollmentState.gestureCount}",
             modifier = Modifier.semantics {
@@ -136,6 +141,7 @@ fun EnrollmentScreen(
             fontWeight = FontWeight.Medium
         )
 
+        //Shows visual progress toward completing the required enrollment sessions.
         LinearProgressIndicator(
             progress = sessionProgress,
             modifier = Modifier
@@ -153,6 +159,7 @@ fun EnrollmentScreen(
     }
 }
 
+//Displays the accessibility mode toggle and explains its effect on profile tolerance.
 @Composable
 private fun AccessibilityModeCard(
     enabled: Boolean,
@@ -226,6 +233,7 @@ private fun AccessibilityModeCard(
                 )
             }
 
+            //Provides extra feedback when accessibility mode is active.
             if (enabled) {
                 Text(
                     text = "Baseline will accommodate higher behavioural variance",
@@ -237,6 +245,7 @@ private fun AccessibilityModeCard(
     }
 }
 
+//Finds the parent ComponentActivity from the current Compose context.
 private tailrec fun Context.findComponentActivity(): ComponentActivity? {
     return when (this) {
         is ComponentActivity -> this

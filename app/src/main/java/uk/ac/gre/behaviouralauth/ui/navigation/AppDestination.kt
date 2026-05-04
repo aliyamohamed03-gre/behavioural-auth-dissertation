@@ -1,5 +1,5 @@
 package uk.ac.gre.behaviouralauth.ui.navigation
-
+//Defines the app screens and their navigation route names
 sealed class AppDestination(val route: String) {
     data object Consent : AppDestination("consent")
     data object Home : AppDestination("home")
