@@ -8,6 +8,8 @@ import java.util.Date
 import java.util.Locale
 
 class CsvExporter(private val context: Context) {
+
+    //Exports collected feature records into a timestamped CSV file.
     fun export(records: List<FeatureRecord>): File {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val file = File(
@@ -26,10 +28,12 @@ class CsvExporter(private val context: Context) {
     }
 
     private fun writeHeader(writer: BufferedWriter) {
+        //Writes the column names first so the export is easy to understand.
         writer.appendLine(CSV_HEADER)
     }
 
     private fun writeRow(writer: BufferedWriter, record: FeatureRecord) {
+        //Converts one feature record into a single CSV row.
         writer.appendLine(
             listOf(
                 csvString(record.userId),
@@ -56,10 +60,12 @@ class CsvExporter(private val context: Context) {
     }
 
     private fun csvDouble(value: Double): String {
+        //Keeps decimal values consistent across devices and locales.
         return String.format(Locale.US, "%.6f", value)
     }
 
     private fun csvString(value: String): String {
+        //Escapes text safely in case it contains commas, quotes, or line breaks.
         val escaped = value.replace("\"", "\"\"")
         return if (escaped.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
             "\"$escaped\""

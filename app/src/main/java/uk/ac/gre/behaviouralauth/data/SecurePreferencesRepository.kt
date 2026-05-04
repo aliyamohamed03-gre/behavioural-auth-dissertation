@@ -11,6 +11,8 @@ import uk.ac.gre.behaviouralauth.model.SensitivitySetting
 
 @Suppress("DEPRECATION")
 class SecurePreferencesRepository(context: Context) {
+
+    //Stores small pieces of app data in encrypted shared preferences.
     private val prefs: SharedPreferences by lazy {
         val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         EncryptedSharedPreferences.create(
@@ -33,6 +35,7 @@ class SecurePreferencesRepository(context: Context) {
     }
 
     fun getSensitivity(): SensitivitySetting {
+        //Reads the saved sensitivity level, using medium as the default.
         val storedValue = prefs.getInt(KEY_SENSITIVITY, SensitivitySetting.MEDIUM.storageValue)
         return SensitivitySetting.fromStorage(storedValue)
     }
@@ -48,6 +51,7 @@ class SecurePreferencesRepository(context: Context) {
     }
 
     fun getAuthState(): AuthState {
+        //Falls back safely if the saved state is missing or invalid.
         val rawState = prefs.getString(KEY_AUTH_STATE, AuthState.NOT_ENROLLED.name)
         return runCatching { AuthState.valueOf(rawState.orEmpty()) }
             .getOrDefault(AuthState.NOT_ENROLLED)
@@ -58,10 +62,12 @@ class SecurePreferencesRepository(context: Context) {
     }
 
     fun verifyPin(pin: String): Boolean {
+        //Compares the entered PIN as a hash, so the plain PIN is not stored.
         return sha256(pin) == prefs.getString(KEY_PIN_HASH, "")
     }
 
     fun resetProfile() {
+        //Clears enrolment progress while keeping consent and settings intact.
         prefs.edit()
             .putInt(KEY_SESSIONS_COMPLETED, 0)
             .putString(KEY_AUTH_STATE, AuthState.NOT_ENROLLED.name)
@@ -69,6 +75,7 @@ class SecurePreferencesRepository(context: Context) {
     }
 
     fun approximateDataSizeText(): String {
+        //Estimates how much preference data is currently stored.
         val byteCount = prefs.all.entries.sumOf { entry ->
             entry.key.length + (entry.value?.toString()?.length ?: 0)
         }.coerceAtLeast(1)
@@ -81,12 +88,14 @@ class SecurePreferencesRepository(context: Context) {
     }
 
     private fun ensureDefaults() {
+        //Creates the default PIN hash the first time the app is used.
         if (!prefs.contains(KEY_PIN_HASH)) {
             prefs.edit().putString(KEY_PIN_HASH, sha256(DEFAULT_PIN)).apply()
         }
     }
 
     private fun sha256(value: String): String {
+        //Produces a SHA-256 hash for PIN comparison.
         return MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray())
             .joinToString(separator = "") { byte -> "%02x".format(byte) }
@@ -102,4 +111,3 @@ class SecurePreferencesRepository(context: Context) {
         const val DEFAULT_PIN = "1234"
     }
 }
-

@@ -2,20 +2,27 @@ package uk.ac.gre.behaviouralauth.export
 
 import uk.ac.gre.behaviouralauth.capture.FeatureVector
 
+//Stores one feature window with extra session details for exporting.
 data class FeatureRecord(
     val userId: String,
     val sessionId: String,
     val sessionType: String,
     val windowStartMs: Long,
     val windowEndMs: Long,
+
+    //Captured activity and confidence for this window.
     val keystrokeCount: Int,
     val gestureCount: Int,
     val confidence: Double,
+
+    //Typing behaviour features.
     val meanInterKeyInterval: Double,
     val stdInterKeyInterval: Double,
     val medianInterKeyInterval: Double,
     val deleteRatio: Double,
     val typingSpeed: Double,
+
+    //Swipe behaviour features.
     val meanSwipeVelocity: Double,
     val stdSwipeVelocity: Double,
     val meanSwipeDuration: Double,
@@ -30,6 +37,7 @@ data class FeatureRecord(
             sessionId: String,
             sessionType: String
         ): FeatureRecord {
+            //Adds user and session metadata to a calculated feature vector.
             return FeatureRecord(
                 userId = userId,
                 sessionId = sessionId,
