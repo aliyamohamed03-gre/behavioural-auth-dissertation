@@ -9,15 +9,11 @@ import kotlin.math.sqrt
 
 private const val MIN_SWIPE_DISTANCE_PX = 5f
 
-/**
- * Captures swipe-like drag gestures from a Compose UI element.
- *
- * A gesture is emitted only if the pointer moved more than a small threshold,
- * which helps filter out simple taps that are not meaningful behavioural data.
- */
+
 fun Modifier.captureSwipes(onSwipe: (SwipeEvent) -> Unit): Modifier {
     return pointerInput(onSwipe) {
         awaitEachGesture {
+            //starts tracking when the user first touches the screen.
             val down = awaitFirstDown(requireUnconsumed = false)
             val startPosition = down.position
             val startTimestamp = down.uptimeMillis
@@ -33,11 +29,13 @@ fun Modifier.captureSwipes(onSwipe: (SwipeEvent) -> Unit): Modifier {
                 endPosition = trackedPointer.position
                 endTimestamp = trackedPointer.uptimeMillis
 
+                //Marks the gesture as a swipe only after it passes the minimum distance.
                 if (distanceBetween(startPosition, endPosition) > MIN_SWIPE_DISTANCE_PX) {
                     movedEnough = true
                 }
 
                 if (!trackedPointer.pressed) {
+                    //Emits the swipe once the finger is lifted.
                     if (movedEnough) {
                         onSwipe(
                             SwipeEvent(
@@ -58,8 +56,8 @@ fun Modifier.captureSwipes(onSwipe: (SwipeEvent) -> Unit): Modifier {
 }
 
 private fun distanceBetween(start: Offset, end: Offset): Float {
+    //Calculates straight-line movement between two screen positions.
     val dx = end.x - start.x
     val dy = end.y - start.y
     return sqrt(dx * dx + dy * dy)
 }
-

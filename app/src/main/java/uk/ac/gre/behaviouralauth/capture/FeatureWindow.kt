@@ -9,13 +9,9 @@ private const val TIME_CLOSE_THRESHOLD_MS = 30_000L
 private const val INACTIVITY_CLOSE_THRESHOLD_MS = 10_000L
 private const val FULL_CONFIDENCE_EVENT_COUNT = 20.0
 
-/**
- * Collects behavioural events until a window is ready to be closed and scored.
- *
- * This class is deliberately self-contained so it can be tested without any UI
- * dependency and later reused by both enrollment and authentication flows.
- */
+
 class FeatureWindow {
+    //Keeps the raw events that belong to the current feature window.
     private val keystrokes = mutableListOf<KeystrokeEvent>()
     private val swipes = mutableListOf<SwipeEvent>()
     private var firstEventMs: Long? = null
@@ -45,13 +41,9 @@ class FeatureWindow {
         firstEventMs = minTimestamp(firstEventMs, event.startTimestampMs)
     }
 
-    /**
-     * Closes on:
-     * - 20+ keystrokes
-     * - 5+ swipes
-     * - 30+ seconds elapsed from the first event when at least 5 events exist
-     */
+
     fun shouldCloseDueToVolumeOrTime(currentMs: Long): Boolean {
+        //Closes the window once enough typing or swipe activity has been collected.
         if (keystrokeCount >= KEYSTROKE_CLOSE_THRESHOLD) {
             return true
         }
@@ -60,18 +52,17 @@ class FeatureWindow {
             return true
         }
 
+        //Also closes the window if it has been open long enough with some activity.
         val startMs = firstEventMs ?: return false
         return totalEventCount >= MIN_EVENTS_FOR_TIME_CLOSE &&
-            currentMs - startMs >= TIME_CLOSE_THRESHOLD_MS
+                currentMs - startMs >= TIME_CLOSE_THRESHOLD_MS
     }
 
-    /**
-     * Closes if the user has been inactive for 10+ seconds and the window has
-     * at least 5 total events.
-     */
+
     fun shouldCloseDueToInactivity(lastEventMs: Long, currentMs: Long): Boolean {
+        //Prevents the window from staying open when the user has stopped interacting.
         return totalEventCount >= MIN_EVENTS_FOR_TIME_CLOSE &&
-            currentMs - lastEventMs >= INACTIVITY_CLOSE_THRESHOLD_MS
+                currentMs - lastEventMs >= INACTIVITY_CLOSE_THRESHOLD_MS
     }
 
     fun lastEventTimestamp(): Long? {
@@ -81,13 +72,9 @@ class FeatureWindow {
         return listOfNotNull(lastKeystroke, lastSwipe).maxOrNull()
     }
 
-    /**
-     * Computes all window features from the accumulated events.
-     *
-     * Returning a FeatureVector instead of primitive values keeps the window
-     * computation output stable and easy to pass through later repositories.
-     */
+
     fun computeFeatures(windowEndMs: Long): FeatureVector {
+        //If there are no events, return an empty feature vector for this window.
         val startMs = firstEventMs ?: return FeatureVector.empty(windowEndMs, windowEndMs)
 
         val interKeyIntervals = keystrokes
@@ -95,6 +82,7 @@ class FeatureWindow {
                 (current.timestampMs - previous.timestampMs).coerceAtLeast(0L).toDouble()
             }
 
+        //Extracts the swipe-based values used for calculating averages and variation.
         val swipeVelocities = swipes.map { it.velocityPxPerSec.toDouble().finiteOrZero() }
         val swipeDurations = swipes.map { it.durationMs.coerceAtLeast(0L).toDouble() }
         val swipeDistances = swipes.map { it.distancePx.toDouble().finiteOrZero() }
@@ -102,6 +90,7 @@ class FeatureWindow {
 
         val typingEvents = keystrokes.count { !it.wasDeletion }
 
+        //Builds the final feature vector from typing and gesture behaviour.
         return FeatureVector(
             windowStartMs = startMs,
             windowEndMs = windowEndMs,
@@ -130,10 +119,9 @@ class FeatureWindow {
         ).sanitized()
     }
 
-    /**
-     * Clears the window so a new behavioural window can start fresh.
-     */
+
     fun reset() {
+        //Clears the current window so the next set of events can be collected.
         keystrokes.clear()
         swipes.clear()
         firstEventMs = null
@@ -141,6 +129,7 @@ class FeatureWindow {
 
     companion object {
         fun confidenceFromCount(totalEventCount: Int): Double {
+            //Confidence increases as more behaviour is captured, up to a maximum of 1.
             return (totalEventCount / FULL_CONFIDENCE_EVENT_COUNT)
                 .coerceIn(0.0, 1.0)
         }
@@ -157,6 +146,7 @@ private fun List<Double>.meanOrZero(): Double {
 }
 
 private fun List<Double>.populationStdOrZero(): Double {
+    //Uses population standard deviation because the whole window is being summarised.
     if (size < 2) return 0.0
     val mean = meanOrZero()
     val variance = sumOf { value ->
@@ -168,6 +158,7 @@ private fun List<Double>.populationStdOrZero(): Double {
 }
 
 private fun List<Double>.medianOrZero(): Double {
+    //Gives a middle value that is less affected by unusually large timing gaps.
     if (isEmpty()) return 0.0
     val sorted = sorted()
     val middleIndex = sorted.size / 2
@@ -184,6 +175,7 @@ private fun Double.finiteOrZero(): Double {
 }
 
 private fun FeatureVector.sanitized(): FeatureVector {
+    //Makes sure invalid numeric values do not reach the authentication model.
     return copy(
         confidence = confidence.finiteOrZero(),
         meanInterKeyInterval = meanInterKeyInterval.finiteOrZero(),
@@ -199,4 +191,3 @@ private fun FeatureVector.sanitized(): FeatureVector {
         stdSwipeDistance = stdSwipeDistance.finiteOrZero()
     )
 }
-

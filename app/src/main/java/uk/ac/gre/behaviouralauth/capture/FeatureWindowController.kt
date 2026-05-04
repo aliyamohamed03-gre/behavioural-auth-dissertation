@@ -1,20 +1,12 @@
 package uk.ac.gre.behaviouralauth.capture
 
-/**
- * Coordinates one active FeatureWindow and emits completed FeatureVectors.
- *
- * The controller is the piece that the ViewModel can later own, while the
- * FeatureWindow remains a focused statistics engine.
- */
 class FeatureWindowController(
     private val onWindowClosed: (FeatureVector) -> Unit
 ) {
+    //Holds the current group of behavioural events before they become features.
     private val window = FeatureWindow()
 
-    /**
-     * The snapshot is retained after a window closes so the UI can still show
-     * the most recent window summary until the next window starts accumulating.
-     */
+    //Keeps the latest window summary so the UI can still show recent activity.
     private var latestSnapshot = WindowSnapshot(
         keystrokeCount = 0,
         swipeCount = 0,
@@ -35,17 +27,15 @@ class FeatureWindowController(
         closeWindowIfNeeded(currentMs = event.timestampMs)
     }
 
-    /**
-     * Called by a periodic timer to close windows that have gone stale due to
-     * elapsed time or inactivity.
-     */
     fun checkForTimeBasedClose(currentMs: Long) {
+        //Nothing needs to be checked if no behaviour has been captured yet.
         if (window.isEmpty) {
             return
         }
 
         val lastEventMs = window.lastEventTimestamp() ?: return
 
+        //Closes the window if it has enough data, has lasted too long, or the user is inactive.
         if (
             window.shouldCloseDueToVolumeOrTime(currentMs) ||
             window.shouldCloseDueToInactivity(lastEventMs, currentMs)
@@ -55,10 +45,12 @@ class FeatureWindowController(
     }
 
     fun snapshot(): WindowSnapshot {
+        //Returns a live snapshot when the window is active, otherwise the last saved one.
         return if (window.isEmpty) latestSnapshot else snapshotFromWindow()
     }
 
     private fun closeWindowIfNeeded(currentMs: Long) {
+        //Used after each new event to decide whether the current window is complete.
         if (window.shouldCloseDueToVolumeOrTime(currentMs)) {
             closeWindow(windowEndMs = currentMs)
         }
@@ -66,6 +58,8 @@ class FeatureWindowController(
 
     private fun closeWindow(windowEndMs: Long) {
         val features = window.computeFeatures(windowEndMs)
+
+        //Saves a summary before resetting, so the latest window can still be displayed.
         latestSnapshot = WindowSnapshot(
             keystrokeCount = features.keystrokeCount,
             swipeCount = features.gestureCount,
@@ -73,11 +67,13 @@ class FeatureWindowController(
             confidence = features.confidence,
             firstEventTimestamp = features.windowStartMs
         )
+
         onWindowClosed(features)
         window.reset()
     }
 
     private fun snapshotFromWindow(): WindowSnapshot {
+        //Creates a lightweight summary of the current window without closing it.
         return WindowSnapshot(
             keystrokeCount = window.keystrokeCount,
             swipeCount = window.swipeCount,
@@ -88,6 +84,7 @@ class FeatureWindowController(
     }
 }
 
+//Simple view of the current feature window, mainly useful for status display.
 data class WindowSnapshot(
     val keystrokeCount: Int,
     val swipeCount: Int,

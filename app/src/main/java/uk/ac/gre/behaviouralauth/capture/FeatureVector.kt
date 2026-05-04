@@ -1,21 +1,22 @@
 package uk.ac.gre.behaviouralauth.capture
 
-/**
- * Represents all behavioural features extracted from one closed window.
- *
- * Field names match the later CSV export schema exactly, so they should not be
- * renamed casually.
- */
+//Holds the calculated behaviour features for one time window.
 data class FeatureVector(
     val windowStartMs: Long,
     val windowEndMs: Long,
+
+    //Basic activity counts used to judge how much behaviour was captured.
     val keystrokeCount: Int,
     val gestureCount: Int,
     val confidence: Double,
+
+    //Typing features based on timing and correction behaviour.
     val meanInterKeyInterval: Double,
     val stdInterKeyInterval: Double,
     val deleteRatio: Double,
     val typingSpeed: Double,
+
+    //Swipe features based on movement speed, time, and distance.
     val meanSwipeVelocity: Double,
     val stdSwipeVelocity: Double,
     val meanSwipeDuration: Double,
@@ -25,12 +26,8 @@ data class FeatureVector(
     val stdSwipeDistance: Double
 ) {
     companion object {
-        /**
-         * Returns a zero-filled feature vector.
-         *
-         * This is useful when a window closes without enough data or when tests
-         * need a known empty baseline object.
-         */
+
+        //Creates a blank feature vector when there is not enough activity in the window.
         fun empty(startMs: Long, endMs: Long): FeatureVector {
             return FeatureVector(
                 windowStartMs = startMs,
@@ -53,4 +50,3 @@ data class FeatureVector(
         }
     }
 }
-

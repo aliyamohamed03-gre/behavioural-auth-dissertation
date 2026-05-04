@@ -2,24 +2,12 @@ package uk.ac.gre.behaviouralauth.capture
 
 import kotlin.math.sqrt
 
-/**
- * Common base type for all behavioural input events captured by the app.
- *
- * Each event exposes a single timestamp so windowing logic can order and
- * evaluate events consistently, even though different event types carry
- * different raw details.
- */
+//Base type for all behavioural data captured by the app.
 sealed class BehaviouralEvent {
     abstract val timestampMs: Long
 }
 
-/**
- * Captures a single text-length transition observed from user typing.
- *
- * The app intentionally models typing through text-length changes rather than
- * low-level key down/up callbacks because Android soft keyboards are not
- * reliable sources of those events.
- */
+//Stores a typing change, such as adding or deleting characters.
 data class KeystrokeEvent(
     override val timestampMs: Long,
     val previousLength: Int,
@@ -27,9 +15,7 @@ data class KeystrokeEvent(
     val wasDeletion: Boolean
 ) : BehaviouralEvent()
 
-/**
- * Captures one swipe-like drag gesture from pointer down to pointer up.
- */
+//Stores the main details of a swipe gesture.
 data class SwipeEvent(
     val startTimestampMs: Long,
     val endTimestampMs: Long,
@@ -38,19 +24,22 @@ data class SwipeEvent(
     val endX: Float,
     val endY: Float
 ) : BehaviouralEvent() {
+
+    //Uses the end time as the event timestamp because the full swipe is known by then.
     override val timestampMs: Long
         get() = endTimestampMs
 
     val durationMs: Long
         get() = endTimestampMs - startTimestampMs
 
+    //Calculates the straight-line distance between the start and end of the swipe.
     val distancePx: Float
         get() = sqrt(
             (endX - startX) * (endX - startX) +
-                (endY - startY) * (endY - startY)
+                    (endY - startY) * (endY - startY)
         )
 
+    //Converts swipe speed into pixels per second.
     val velocityPxPerSec: Float
         get() = if (durationMs > 0) distancePx * 1000f / durationMs else 0f
 }
-

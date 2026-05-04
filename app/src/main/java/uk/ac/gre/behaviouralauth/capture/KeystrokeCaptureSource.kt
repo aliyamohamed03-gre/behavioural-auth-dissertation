@@ -3,15 +3,11 @@ package uk.ac.gre.behaviouralauth.capture
 import android.text.Editable
 import android.text.TextWatcher
 
-/**
- * Small helper that turns text-length changes into behavioural keystroke events.
- *
- * Two entry points are provided so the same event model can be used from both
- * classic Android Views and Jetpack Compose text fields.
- */
+
 class KeystrokeCaptureSource {
     fun createTextWatcher(onEvent: (KeystrokeEvent) -> Unit): TextWatcher {
         return object : TextWatcher {
+            //Stores the text length before Android applies the latest edit.
             private var previousLength: Int = 0
 
             override fun beforeTextChanged(
@@ -32,25 +28,26 @@ class KeystrokeCaptureSource {
 
             override fun afterTextChanged(s: Editable?) {
                 val newLength = s?.length ?: 0
+
+                //Turns the text length change into a keystroke event.
                 emitLengthChange(
                     previousLength = previousLength,
                     newLength = newLength,
                     onEvent = onEvent
                 )
+
                 previousLength = newLength
             }
         }
     }
 
-    /**
-     * Compose TextField uses onValueChange rather than TextWatcher, so we expose
-     * the same conversion logic in plain function form.
-     */
+
     fun handleComposeTextChange(
         previousText: String,
         newText: String,
         onEvent: (KeystrokeEvent) -> Unit
     ) {
+        //Provides the same capture logic for Jetpack Compose text fields.
         emitLengthChange(
             previousLength = previousText.length,
             newLength = newText.length,
@@ -63,6 +60,7 @@ class KeystrokeCaptureSource {
         newLength: Int,
         onEvent: (KeystrokeEvent) -> Unit
     ) {
+        //Ignores edits that do not change the text length.
         if (previousLength == newLength) {
             return
         }
