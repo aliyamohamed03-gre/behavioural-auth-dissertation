@@ -1,11 +1,6 @@
 package uk.ac.gre.behaviouralauth.scoring
 
-/**
- * Stores the behavioural baseline created during enrollment.
- *
- * The means describe the user's typical behaviour. The standard deviations
- * describe how much natural variation is expected for each feature.
- */
+//Stores the user's baseline behavioural profile for authentication scoring
 data class BaselineProfile(
     val featureMeans: Map<String, Double>,
     val featureStds: Map<String, Double>,
@@ -13,7 +8,7 @@ data class BaselineProfile(
     val isAccessibilityProfile: Boolean,
     val createdTimestampMs: Long
 )
-
+//Defines the Tier 1 behavioural features used to build and score profiles
 object Tier1FeatureKeys {
     val ALL = listOf(
         "meanInterKeyInterval",

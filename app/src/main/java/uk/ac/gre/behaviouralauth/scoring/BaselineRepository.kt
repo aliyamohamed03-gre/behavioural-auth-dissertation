@@ -6,15 +6,11 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 import org.json.JSONObject
 
-/**
- * Stores only the behavioural baseline profile.
- *
- * This deliberately uses a different encrypted preferences file from
- * SecurePreferencesRepository so authentication settings and baseline evidence
- * remain separated.
- */
 @Suppress("DEPRECATION")
+//Stores and retrieves baseline profiles using encrypted shared preferences.
 class BaselineRepository(context: Context) {
+
+    //Lazily creates encrypted preferences for securely storing behavioural profile data.
     private val prefs: SharedPreferences by lazy {
         val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         EncryptedSharedPreferences.create(
@@ -26,6 +22,7 @@ class BaselineRepository(context: Context) {
         )
     }
 
+    //Saves the baseline profile values and metadata securely.
     fun saveProfile(profile: BaselineProfile) {
         prefs.edit()
             .putString(KEY_FEATURE_MEANS, mapToJson(profile.featureMeans))
@@ -36,6 +33,7 @@ class BaselineRepository(context: Context) {
             .apply()
     }
 
+    //Loads the stored baseline profile or returns null if no profile exists.
     fun loadProfile(): BaselineProfile? {
         val meansJson = prefs.getString(KEY_FEATURE_MEANS, null) ?: return null
         val stdsJson = prefs.getString(KEY_FEATURE_STDS, null) ?: return null
@@ -49,16 +47,19 @@ class BaselineRepository(context: Context) {
         )
     }
 
+    //Checks whether a valid baseline profile has been saved.
     fun hasProfile(): Boolean {
         return prefs.contains(KEY_FEATURE_MEANS) &&
-            prefs.contains(KEY_FEATURE_STDS) &&
-            prefs.getInt(KEY_SESSION_COUNT, 0) > 0
+                prefs.contains(KEY_FEATURE_STDS) &&
+                prefs.getInt(KEY_SESSION_COUNT, 0) > 0
     }
 
+    //Deletes all saved baseline profile data.
     fun clearProfile() {
         prefs.edit().clear().apply()
     }
 
+    //Converts a feature map into a JSON string for storage.
     private fun mapToJson(values: Map<String, Double>): String {
         val json = JSONObject()
         values.toSortedMap().forEach { (key, value) ->
@@ -67,6 +68,7 @@ class BaselineRepository(context: Context) {
         return json.toString()
     }
 
+    //Converts stored JSON back into a feature map.
     private fun jsonToMap(rawJson: String): Map<String, Double> {
         val json = JSONObject(rawJson)
         return buildMap {
@@ -78,6 +80,7 @@ class BaselineRepository(context: Context) {
         }
     }
 
+    //Defines preference file and key names used for profile storage.
     private companion object {
         const val PREFERENCES_FILE = "baseline_profile_prefs"
         const val KEY_FEATURE_MEANS = "feature_means"
@@ -87,4 +90,3 @@ class BaselineRepository(context: Context) {
         const val KEY_CREATED_TIMESTAMP_MS = "created_timestamp_ms"
     }
 }
-
