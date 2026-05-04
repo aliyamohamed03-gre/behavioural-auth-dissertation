@@ -3,6 +3,7 @@ package uk.ac.gre.behaviouralauth.audit
 
 sealed class AuditEvent(val eventType: String) {
     data class ConsentGranted(val timestamp: Long) : AuditEvent("CONSENT_GRANTED")
+    //Logged when the user gives permission for behavioural data collection
     data class EnrollmentStarted(
         val timestamp: Long,
         val isAccessibilityMode: Boolean
