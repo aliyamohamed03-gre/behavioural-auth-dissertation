@@ -1,11 +1,6 @@
 package uk.ac.gre.behaviouralauth.audit
 
-/**
- * Events that matter for forensic accountability.
- *
- * Each event captures a meaningful action in the authentication lifecycle so
- * a reviewer can reconstruct what happened later.
- */
+
 sealed class AuditEvent(val eventType: String) {
     data class ConsentGranted(val timestamp: Long) : AuditEvent("CONSENT_GRANTED")
     data class EnrollmentStarted(
